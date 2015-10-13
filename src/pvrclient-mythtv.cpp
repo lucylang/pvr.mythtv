@@ -548,6 +548,13 @@ PVR_ERROR PVRClientMythTV::GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANN
       tag.iGenreType = genre & 0xF0;
       tag.strEpisodeName = it->second->subTitle.c_str();
       tag.strIconPath = "";
+      for (std::vector<Myth::Artwork>::const_iterator awIt = it->second->artwork.begin(); awIt != it->second->artwork.end(); ++awIt)
+      {
+        if (awIt->type != "coverart")
+          continue;
+        tag.strIconPath = awIt->url.c_str();
+        break;
+      }
       tag.strPlotOutline = "";
       tag.bNotify = false;
       tag.firstAired = it->second->airdate;
