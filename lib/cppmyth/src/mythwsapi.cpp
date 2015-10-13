@@ -799,6 +799,7 @@ ProgramMapPtr WSAPI::GetProgramGuide1_0(uint32_t chanid, time_t starttime, time_
   const bindings_t *bindlist = MythDTO::getListBindArray(proto);
   const bindings_t *bindchan = MythDTO::getChannelBindArray(proto);
   const bindings_t *bindprog = MythDTO::getProgramBindArray(proto);
+  const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
@@ -859,6 +860,16 @@ ProgramMapPtr WSAPI::GetProgramGuide1_0(uint32_t chanid, time_t starttime, time_
       // Bind the new program
       JSON::BindObject(prog, program.get(), bindprog);
       program->channel = channel;
+      // Bind artwork list of program
+      const JSON::Node& arts = prog.GetObjectValue("Artwork").GetObjectValue("ArtworkInfos");
+      size_t as = arts.Size();
+      for (size_t pa = 0; pa < as; ++pa)
+      {
+        const JSON::Node& artw = arts.GetArrayElement(pa);
+        Artwork artwork = Artwork();  // Using default constructor
+        JSON::BindObject(artw, &artwork, bindartw);
+        program->artwork.push_back(artwork);
+      }
       ret->insert(std::make_pair(program->startTime, program));
     }
   }
@@ -878,6 +889,7 @@ ProgramMapPtr WSAPI::GetProgramList2_2(uint32_t chanid, time_t starttime, time_t
   const bindings_t *bindlist = MythDTO::getListBindArray(proto);
   const bindings_t *bindprog = MythDTO::getProgramBindArray(proto);
   const bindings_t *bindchan = MythDTO::getChannelBindArray(proto);
+  const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
@@ -940,6 +952,16 @@ ProgramMapPtr WSAPI::GetProgramList2_2(uint32_t chanid, time_t starttime, time_t
       // Bind channel of program
       const JSON::Node& chan = prog.GetObjectValue("Channel");
       JSON::BindObject(chan, &(program->channel), bindchan);
+      // Bind artwork list of program
+      const JSON::Node& arts = prog.GetObjectValue("Artwork").GetObjectValue("ArtworkInfos");
+      size_t as = arts.Size();
+      for (size_t pa = 0; pa < as; ++pa)
+      {
+        const JSON::Node& artw = arts.GetArrayElement(pa);
+        Artwork artwork = Artwork();  // Using default constructor
+        JSON::BindObject(artw, &artwork, bindartw);
+        program->artwork.push_back(artwork);
+      }
       ret->insert(std::make_pair(program->startTime, program));
       ++total;
     }
