@@ -39,6 +39,7 @@ PVRClientMythTV::PVRClientMythTV()
 , m_control(NULL)
 , m_liveStream(NULL)
 , m_recordingStream(NULL)
+, m_dummyStream(NULL)
 , m_hang(false)
 , m_powerSaving(false)
 , m_fileOps(NULL)
@@ -55,6 +56,9 @@ PVRClientMythTV::PVRClientMythTV()
 PVRClientMythTV::~PVRClientMythTV()
 {
   SAFE_DELETE(m_demux);
+  SAFE_DELETE(m_dummyStream);
+  SAFE_DELETE(m_liveStream);
+  SAFE_DELETE(m_recordingStream);
   SAFE_DELETE(m_fileOps);
   SAFE_DELETE(m_scheduleManager);
   SAFE_DELETE(m_eventHandler);
@@ -1987,6 +1991,15 @@ bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
   if (m_fileOps)
     m_fileOps->Resume();
   XBMC->Log(LOG_ERROR,"%s: Failed to open live stream", __FUNCTION__);
+  // Open the dummy stream 'NO BROADCASTING'
+  if (!m_dummyStream)
+    m_dummyStream = new NoBroadcasting();
+  if (m_dummyStream && m_dummyStream->IsValid())
+  {
+    if(g_bDemuxing)
+      m_demux = new Demux(m_dummyStream);
+    return true;
+  }
   XBMC->QueueNotification(QUEUE_WARNING, XBMC->GetLocalizedString(30305)); // Channel unavailable
   return false;
 }
@@ -2004,6 +2017,8 @@ void PVRClientMythTV::CloseLiveStream()
   // Destroy my stream
   if (m_liveStream)
     SAFE_DELETE(m_liveStream);
+  if (m_dummyStream)
+    SAFE_DELETE(m_dummyStream);
   // Resume fileOps
   if (m_fileOps)
     m_fileOps->Resume();
@@ -2015,7 +2030,11 @@ void PVRClientMythTV::CloseLiveStream()
 int PVRClientMythTV::ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
   // Keep unlocked
-  return (m_liveStream ? m_liveStream->Read(pBuffer, iBufferSize) : -1);
+  if (m_liveStream)
+    return m_liveStream->Read(pBuffer, iBufferSize);
+  if (m_dummyStream)
+    return m_dummyStream->Read(pBuffer, iBufferSize);
+  return -1;
 }
 
 int PVRClientMythTV::GetCurrentClientChannel()
@@ -2040,14 +2059,14 @@ bool PVRClientMythTV::SwitchChannel(const PVR_CHANNEL &channel)
 
   // Begin critical section
   CLockObject lock(m_lock);
-  // Have live stream
-  if (!m_liveStream)
-    return false;
   // Destroy my demuxer for reopening
   if (m_demux)
     SAFE_DELETE(m_demux);
   // Stop the live for reopening
-  m_liveStream->StopLiveTV();
+  if (m_liveStream)
+    m_liveStream->StopLiveTV();
+  if (m_dummyStream)
+    SAFE_DELETE(m_dummyStream);
   // Try reopening for channel
   if (OpenLiveStream(channel))
     return true;
@@ -2058,9 +2077,6 @@ long long PVRClientMythTV::SeekLiveStream(long long iPosition, int iWhence)
 {
   if (g_bExtraDebug)
     XBMC->Log(LOG_DEBUG, "%s: pos: %lld, whence: %d", __FUNCTION__, iPosition, iWhence);
-
-  if (!m_liveStream)
-    return -1;
 
   Myth::WHENCE_t whence;
   switch (iWhence)
@@ -2078,7 +2094,13 @@ long long PVRClientMythTV::SeekLiveStream(long long iPosition, int iWhence)
     return -1;
   }
 
-  long long retval = (long long) m_liveStream->Seek((int64_t)iPosition, whence);
+  long long retval;
+  if (m_liveStream)
+    retval = (long long) m_liveStream->Seek((int64_t)iPosition, whence);
+  else if (m_dummyStream)
+    retval = (long long) m_dummyStream->Seek((int64_t)iPosition, whence);
+  else
+    return -1;
 
   if (g_bExtraDebug)
     XBMC->Log(LOG_DEBUG, "%s: Done - position: %lld", __FUNCTION__, retval);
@@ -2091,10 +2113,13 @@ long long PVRClientMythTV::LengthLiveStream()
   if (g_bExtraDebug)
     XBMC->Log(LOG_DEBUG, "%s", __FUNCTION__);
 
-  if (!m_liveStream)
+  long long retval;
+  if (m_liveStream)
+    retval = (long long) m_liveStream->GetSize();
+  else if (m_dummyStream)
+    retval = (long long) m_dummyStream->GetSize();
+  else
     return -1;
-
-  long long retval = (long long) m_liveStream->GetSize();
 
   if (g_bExtraDebug)
     XBMC->Log(LOG_DEBUG, "%s: Done - duration: %lld", __FUNCTION__, retval);

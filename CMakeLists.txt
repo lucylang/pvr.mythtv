@@ -45,6 +45,7 @@ set(MYTHTV_SOURCES src/avinfo.cpp
                    src/demux.cpp
                    src/guidialogbase.cpp
                    src/guidialogyesno.cpp
+                   src/nobroadcasting.cpp
                    src/pvrclient-mythtv.cpp
                    src/cppmyth/MythScheduleManager.cpp
                    src/cppmyth/MythScheduleHelperNoHelper.cpp
