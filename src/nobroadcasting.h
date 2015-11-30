@@ -34,15 +34,11 @@ public:
   virtual int Read(void* buffer, unsigned n);
   virtual int64_t Seek(int64_t offset, Myth::WHENCE_t whence);
   virtual int64_t GetPosition() const { return m_pos; }
-  virtual int64_t GetSize() const { return m_pos + 208; }
+  virtual int64_t GetSize() const { return m_flen; }
 
 private:
   bool m_valid;
   void* m_file;
-  char* m_buf;
-  char* m_beg;
-  char* m_end;
-  size_t m_len;
   int64_t m_flen;
   int64_t m_pos;
 

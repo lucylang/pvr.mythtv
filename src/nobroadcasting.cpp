@@ -23,35 +23,26 @@
 #include "nobroadcasting.h"
 #include "client.h"
 #include <platform/os.h>
+#include <inttypes.h>
 
 #define MPEGTS_FILENAME "nobroadcasting.ts"
-#define BUFFER_SIZE     131072
+#define FILE_READ_SIZE  131072
 
 using namespace ADDON;
 
 NoBroadcasting::NoBroadcasting()
 : m_valid(false)
 , m_file(0)
-, m_buf(0)
-, m_beg(0)
-, m_end(0)
-, m_len(0)
 , m_flen(0)
 , m_pos(0)
 {
   std::string filePath;
   filePath = g_szClientPath + PATH_SEPARATOR_STRING + "resources" + PATH_SEPARATOR_STRING + MPEGTS_FILENAME;
-  if ((m_valid = _init(filePath.c_str())))
-  {
-    m_buf = new char[BUFFER_SIZE];
-    m_beg = m_buf;
-    m_end = m_buf + BUFFER_SIZE;
-  }
+  m_valid = _init(filePath.c_str());
 }
 
 NoBroadcasting::~NoBroadcasting()
 {
-  SAFE_DELETE(m_buf);
   if (m_file)
     XBMC->CloseFile(m_file);
 }
@@ -63,62 +54,53 @@ int NoBroadcasting::Read(void* buffer, unsigned n)
 
   char* b = (char*)buffer;
   bool eof = false;
-  n = (n > BUFFER_SIZE ? BUFFER_SIZE : n);
+  n = (n > FILE_READ_SIZE ? FILE_READ_SIZE : n);
   unsigned r = n;
   do
   {
-    if (m_len >= r)
+    size_t s = XBMC->ReadFile(m_file, b, r);
+    if (s > 0)
     {
-      memcpy(b, m_beg, r);
-      m_beg += r;
-      m_len -= r;
-      m_pos += r;
-      return (int)n;
+      r -= s;
+      b += s;
+      m_pos += s;
+      eof = false;
     }
-    memcpy(b, m_beg, m_len);
-    r -= m_len;
-    m_pos += m_len;
-    b += m_len;
-    m_beg = m_buf;
-    m_len = 0;
-    do
+    else
     {
-      size_t s = XBMC->ReadFile(m_file, m_buf, BUFFER_SIZE);
-      if (s > 0)
-      {
-        m_len += s;
-        eof = false;
-        break;
-      }
       if (eof)
         break;
-      else
-        eof = true;
+      eof = true;
       XBMC->SeekFile(m_file, 0, 0);
-    } while (eof);
-  } while (r > 0 && !eof);
-  XBMC->Log(LOG_DEBUG, "%s: EOF", __FUNCTION__);
-  return (int)(n - r);
+    }
+  } while (r > 0 || eof);
+  if (eof)
+    XBMC->Log(LOG_DEBUG, "%s: EOF", __FUNCTION__);
+  if (g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG, "%s: flen=%" PRId64 " pos=%" PRId64, __FUNCTION__, m_flen, m_pos);
+  return (int)(n -r);
 }
 
 int64_t NoBroadcasting::Seek(int64_t offset, Myth::WHENCE_t whence)
 {
   switch (whence)
   {
-    case Myth::WHENCE_SET:
-    m_pos = (offset > GetSize() ? GetSize() : (offset > 0 ? offset : m_pos));
+  case Myth::WHENCE_SET:
+    if (offset <= GetSize() && offset >= 0)
+      return (m_pos = XBMC->SeekFile(m_file, offset, 0));
     break;
   case Myth::WHENCE_CUR:
-    m_pos += (m_pos + offset > GetSize() ? GetSize() : (m_pos + offset < 0 ? 0 : m_pos + offset));
+    if ((m_pos + offset) <= GetSize() && m_pos + offset >= 0)
+      return (m_pos = XBMC->SeekFile(m_file, m_pos + offset, 0));
     break;
   case Myth::WHENCE_END:
-    m_pos = (offset < 0 ? GetSize() : (GetSize() - offset > 0 ? GetSize() - offset : 0));
+    if (offset >= 0 && (GetSize() - offset) >= 0)
+      return (m_pos = XBMC->SeekFile(m_file, GetSize() - offset, 0));
     break;
   default:
-    return -1;
+    break;
   }
-  m_pos = XBMC->SeekFile(m_file, m_pos % m_flen, 0);
-  return m_pos;
+  return -1;
 }
 
 bool NoBroadcasting::_init(const char* filePath)
