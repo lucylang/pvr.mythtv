@@ -586,13 +586,17 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
   {
     XBMC->Log(LOG_INFO, "Changed Setting 'epg' from %u to %u", g_bEPG, *(bool*)settingValue);
     if (g_bEPG != *(bool*)settingValue)
-      g_bEPG = *(bool*)settingValue;
+    {
+      return ADDON_STATUS_NEED_RESTART;
+    }
   }
   else if (str == "timers")
   {
     XBMC->Log(LOG_INFO, "Changed Setting 'timers' from %u to %u", g_bTimers, *(bool*)settingValue);
     if (g_bTimers != *(bool*)settingValue)
-      g_bTimers = *(bool*)settingValue;
+    {
+      return ADDON_STATUS_NEED_RESTART;
+    }
   }
   else if (str == "livetv_priority")
   {

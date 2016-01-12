@@ -206,12 +206,12 @@ msgid "Limit channel tuning attempts"
 msgstr ""
 
 msgctxt "#30066"
-msgid "Enable EPG (requires restart)"
-msgstr "Enable EPG (requires restart)"
+msgid "Enable EPG"
+msgstr "Enable EPG"
 
 msgctxt "#30067"
-msgid "Enable timers (requires restart)"
-msgstr "Enable timers (requires restart)"
+msgid "Enable timers"
+msgstr "Enable timers"
 
 # empty strings from id 30068 to 30099
 

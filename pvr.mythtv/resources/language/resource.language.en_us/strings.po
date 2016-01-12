@@ -197,12 +197,12 @@ msgid "Limit channel tuning attempts"
 msgstr "Limit channel tuning attempts"
 
 msgctxt "#30066"
-msgid "Enable EPG (requires restart)"
-msgstr "Enable EPG (requires restart)"
+msgid "Enable EPG"
+msgstr "Enable EPG"
 
 msgctxt "#30067"
-msgid "Enable timers (requires restart)"
-msgstr "Enable timers (requires restart)"
+msgid "Enable timers"
+msgstr "Enable timers"
 
 msgctxt "#30100"
 msgid "Protocol version: %i - Database version: %i"
