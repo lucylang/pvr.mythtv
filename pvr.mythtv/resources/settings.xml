@@ -9,6 +9,8 @@
     <setting id="livetv" type="bool" label="30006" default="true" />
     <setting id="livetv_priority" type="bool" label="30007" default="true" />
     <setting id="livetv_conflict_strategy" type="enum" label="30008" lvalues="30009|30010|30011" default="0" />
+    <setting id="epg" type="bool" label="30066" default="true" />
+    <setting id="timers" type="bool" label="30067" default="true" />
   </category>
   <category label="30049">
     <setting id="rec_template_provider" type="enum" label="30020" lvalues="30021|30022" default="1" />
@@ -33,7 +35,5 @@
     <setting id="enable_edl" type="enum" label="30058" lvalues="30059|30060|30061" default="0" />
     <setting id="channel_icons" type="bool" label="30063" default="true" />
     <setting id="recording_icons" type="bool" label="30064" default="true" />
-    <setting id="epg" type="bool" label="30066" default="true" />
-    <setting id="timers" type="bool" label="30067" default="true" />
   </category>
 </settings>
