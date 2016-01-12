@@ -40,6 +40,8 @@ int           g_iWSApiPort              = DEFAULT_WSAPI_PORT;               ///<
 std::string   g_szWSSecurityPin         = DEFAULT_WSAPI_SECURITY_PIN;       ///< The default security pin for the mythtv wsapi
 bool          g_bExtraDebug             = DEFAULT_EXTRA_DEBUG;              ///< Output extensive debug information to the log
 bool          g_bLiveTV                 = DEFAULT_LIVETV;                   ///< LiveTV support (or recordings only)
+bool          g_bEPG                    = DEFAULT_EPG;                      ///< EPG support
+bool          g_bTimers                 = DEFAULT_TIMERS;                   ///< Timers support
 bool          g_bLiveTVPriority         = DEFAULT_LIVETV_PRIORITY;          ///< MythTV Backend setting to allow live TV to move scheduled shows
 int           g_iLiveTVConflictStrategy = DEFAULT_LIVETV_CONFLICT_STRATEGY; ///< Conflict resolving strategy (0=
 bool          g_bChannelIcons           = DEFAULT_CHANNEL_ICONS;            ///< Load Channel Icons
@@ -202,7 +204,18 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
     XBMC->Log(LOG_ERROR, "Couldn't get 'livetv' setting, falling back to '%b' as default", DEFAULT_LIVETV);
     g_bLiveTV = DEFAULT_LIVETV;
   }
-
+  if (!XBMC->GetSetting("epg", &g_bEPG))
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'epg' setting, falling back to '%u' as default", DEFAULT_EPG);
+    g_bEPG = DEFAULT_EPG;
+  }
+  if (!XBMC->GetSetting("timers", &g_bTimers))
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'timers' setting, falling back to '%u' as default", DEFAULT_TIMERS);
+    g_bTimers = DEFAULT_TIMERS;
+  }
   /* Read settings "Record livetv_conflict_method" from settings.xml */
   if (!XBMC->GetSetting("livetv_conflict_strategy", &g_iLiveTVConflictStrategy))
   {
@@ -569,6 +582,18 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
     if (g_bLiveTV != *(bool*)settingValue)
       g_bLiveTV = *(bool*)settingValue;
   }
+  else if (str == "epg")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'epg' from %u to %u", g_bEPG, *(bool*)settingValue);
+    if (g_bEPG != *(bool*)settingValue)
+      g_bEPG = *(bool*)settingValue;
+  }
+  else if (str == "timers")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'timers' from %u to %u", g_bTimers, *(bool*)settingValue);
+    if (g_bTimers != *(bool*)settingValue)
+      g_bTimers = *(bool*)settingValue;
+  }
   else if (str == "livetv_priority")
   {
     XBMC->Log(LOG_INFO, "Changed Setting 'extra debug' from %u to %u", g_bLiveTVPriority, *(bool*)settingValue);
@@ -727,8 +752,8 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES *pCapabilities)
     pCapabilities->bSupportsRadio                 = g_bLiveTV;
     pCapabilities->bSupportsChannelGroups         = true;
     pCapabilities->bSupportsChannelScan           = false;
-    pCapabilities->bSupportsEPG                   = true;
-    pCapabilities->bSupportsTimers                = true;
+    pCapabilities->bSupportsEPG                   = g_bEPG;
+    pCapabilities->bSupportsTimers                = g_bTimers;
 
     pCapabilities->bHandlesInputStream            = true;
     pCapabilities->bHandlesDemuxing               = g_bDemuxing;

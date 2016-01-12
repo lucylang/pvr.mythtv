@@ -39,6 +39,8 @@
 #define DEFAULT_LIVETV_PRIORITY             true
 #define DEFAULT_LIVETV_CONFLICT_STRATEGY    LIVETV_CONFLICT_STRATEGY_HASLATER
 #define DEFAULT_LIVETV                      true
+#define DEFAULT_EPG                         true
+#define DEFAULT_TIMERS                      true
 #define DEFAULT_PROTO_PORT                  6543
 #define DEFAULT_WSAPI_PORT                  6544
 #define DEFAULT_WSAPI_SECURITY_PIN          "0000"
